@@ -44,7 +44,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jszip": "^3.10.1",
-    "lightningcss-android-arm64": "^1.32.0",
     "lucide-react": "^0.546.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",

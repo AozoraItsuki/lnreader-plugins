@@ -229,7 +229,7 @@ const proxy = httpProxy.createProxyServer({});
 // Settings
 // ─────────────────────────────────────────────
 const settings: ServerSetting = {
-  CLIENT_HOST: 'http://localhost:3000',
+  CLIENT_HOST: '*',
   fetchMode: FetchMode.PROXY,
   disAllowedRequestHeaders: [
     'sec-ch-ua',

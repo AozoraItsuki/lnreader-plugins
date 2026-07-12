@@ -15,7 +15,7 @@ window.fetch = async (...args) => {
   const [resource, config] = args;
   if (resource.toString().includes('localhost'))
     return await originalFetch(resource, config);
-  const _res = await originalFetch('http://localhost:3000/' + resource, {
+  const _res = await originalFetch(window.location.origin + '/' + resource, {
     ...config,
     credentials: 'include',
     mode: 'cors',

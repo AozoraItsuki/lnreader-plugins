@@ -438,7 +438,7 @@ class WTRLAB implements Plugin.PluginBase {
       }),
     );
 
-    const encKey = results.find(k => k !== null);
+    let encKey = results.find(k => k !== null);
     if (!encKey) encKey = 'IJAFUUxjM25hyzL2AZrn0wl7cESED6Ru';
     return encKey;
   }
