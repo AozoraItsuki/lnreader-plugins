@@ -200,6 +200,36 @@ class WTRLAB implements Plugin.PluginBase {
     this.trace = $('meta[name="sentry-trace"]').attr('content') ?? '';
   }
 
+  private async fetchNovelFromFinder(
+    rawId: number,
+    slug: string,
+  ): Promise<SerieData | null> {
+    if (!this.buildId) {
+      const finderPage = await fetchApi(this.site + 'en/novel-finder').then(
+        res => res.text(),
+      );
+      const finderCheerio = parseHTML(finderPage);
+      const nextData = finderCheerio('#__NEXT_DATA__').html();
+      if (!nextData) return null;
+      this.buildId = JSON.parse(nextData).buildId;
+    }
+
+    const searchText = slug.replace(/-/g, ' ');
+    const params = new URLSearchParams({ text: searchText, page: '1' });
+    const json = await fetchApi(
+      `${this.site}_next/data/${this.buildId}/en/novel-finder.json?${params}`,
+    )
+      .then(r => r.json())
+      .catch(() => null);
+
+    if (!Array.isArray(json?.pageProps?.series)) return null;
+
+    return (
+      (json.pageProps.series as SerieData[]).find(s => s.raw_id === rawId) ??
+      null
+    );
+  }
+
   async parseNovel(novelPath: string): Promise<Plugin.SourceNovel> {
     const body = await fetchApi(this.site + novelPath).then(res => res.text());
     const loadedCheerio = parseHTML(body);
@@ -339,6 +369,45 @@ class WTRLAB implements Plugin.PluginBase {
     if (urlMatch) {
       rawId = parseInt(urlMatch[1]);
       slug = urlMatch[2];
+    }
+
+    // Fallback: if the novel page required login (or data was otherwise missing),
+    // fetch metadata from the novel-finder API using rawId from the URL.
+    if (!novel.name && rawId && slug) {
+      try {
+        const finderData = await this.fetchNovelFromFinder(rawId, slug);
+        if (finderData) {
+          novel.name = finderData.data?.title || '';
+          novel.cover = finderData.data?.image || '';
+          novel.summary = finderData.data?.description || '';
+          novel.author = finderData.data?.author || '';
+          slug = finderData.slug || slug;
+          chapterCount = finderData.chapter_count ?? 0;
+
+          switch (finderData.status) {
+            case 0:
+              novel.status = 'Ongoing';
+              break;
+            case 1:
+              novel.status = 'Completed';
+              break;
+            default:
+              novel.status = 'Unknown';
+          }
+
+          const genreNames = (finderData.genres ?? [])
+            .map(id => this.genreIdMap.get(String(id)))
+            .filter((name): name is string => !!name);
+          const tagNames = (finderData.tags ?? [])
+            .map(id => this.tagIdMap.get(String(id)))
+            .filter((name): name is string => !!name);
+
+          if (genreNames.length > 0) novel.genres = genreNames.join(', ');
+          if (tagNames.length > 0) novel.tags = tagNames.join(', ');
+        }
+      } catch (error) {
+        console.error('Fallback fetchNovelFromFinder failed:', error);
+      }
     }
 
     if (chapterCount === 0) {
