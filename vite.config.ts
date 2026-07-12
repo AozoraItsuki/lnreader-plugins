@@ -34,5 +34,8 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
     open: false,
+    watch: {
+      ignored: ['**/.local/**', '**/.cache/**', '**/.git/**'],
+    },
   },
 });
