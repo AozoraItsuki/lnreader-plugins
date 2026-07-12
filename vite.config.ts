@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import tailwindcss from '@tailwindcss/vite';
 import { proxyHandlerMiddle, proxySettingMiddleware } from './proxy';
+import { createApiMiddleware } from './api';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,6 +18,7 @@ export default defineConfig({
     {
       name: 'proxy',
       configureServer: server => {
+        server.middlewares.use(createApiMiddleware(server));
         server.middlewares.use('/settings', proxySettingMiddleware);
         server.middlewares.use('/https:', proxyHandlerMiddle);
       },
